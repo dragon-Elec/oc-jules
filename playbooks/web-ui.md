@@ -143,7 +143,19 @@ Since the API payload for archiving is unknown, use the DOM to archive a session
 ```bash
 agent-browser open "https://jules.google.com"
 ```
-2. Find the session in the recent sessions list and click its "Task options" button:
+2. Ensure the sidebar is open (if on mobile/narrow screen):
+```bash
+agent-browser eval "(() => {
+  const menuBtn = document.querySelector('button[aria-label=\"Main menu\"]') || document.querySelector('mat-icon[svgicon=\"menu\"]')?.closest('button');
+  const sidebar = document.querySelector('mat-sidenav');
+  if (menuBtn && sidebar && !sidebar.classList.contains('mat-drawer-opened')) {
+    menuBtn.click();
+    return 'Opened sidebar';
+  }
+  return 'Sidebar already open or menu button not found';
+})()"
+```
+3. Find the session in the recent sessions list and click its "Task options" button:
 ```bash
 agent-browser eval "(() => {
   const links = Array.from(document.querySelectorAll('a'));
@@ -161,7 +173,7 @@ agent-browser eval "(() => {
   return 'Options button not found';
 })()"
 ```
-3. Wait a moment, then click "Archive" in the menu:
+4. Wait a moment, then click "Archive" in the menu:
 ```bash
 agent-browser eval "(() => {
   const archiveBtn = Array.from(document.querySelectorAll('[role=\"menuitem\"]')).find(el => el.textContent.includes('Archive'));
