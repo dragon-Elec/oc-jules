@@ -34,6 +34,9 @@ const DEFAULT_CONFIG = `{
   "defaultBranch": "main",
   "requirePlanApproval": false,
 
+  // CLI tools — set false to skip jules binary detection (faster boot)
+  "cliEnabled": true,
+
   // Suggestions browser config
   "suggestions": {
     "browser": "brave",

@@ -8,6 +8,7 @@ export interface JulesConfig {
   defaultBranch?: string
   requirePlanApproval?: boolean
   automationMode?: AutomationMode
+  cliEnabled?: boolean
   suggestions?: SuggestionsConfig
 }
 

@@ -29,7 +29,7 @@ export class Logger {
         service: "jules",
         level,
         message,
-        extra: extraStr,
+        extra,
       },
     }).catch?.(() => {})
 

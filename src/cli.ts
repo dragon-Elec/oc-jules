@@ -39,22 +39,32 @@ export async function execJules(
     const proc = spawn("jules", args, {
       cwd: opts?.cwd ?? process.cwd(),
       shell: true,
-      timeout: opts?.timeout ?? 30_000,
+      // NOTE: spawn() ignores `timeout` — enforce manually below
     })
 
     let stdout = ""
     let stderr = ""
+    let killed = false
+
+    // Enforce timeout manually (spawn doesn't support the timeout option)
+    const timeoutMs = opts?.timeout ?? 30_000
+    const timer = setTimeout(() => {
+      killed = true
+      try { proc.kill("SIGTERM") } catch {}
+      setTimeout(() => { try { proc.kill("SIGKILL") } catch {} }, 2000)
+    }, timeoutMs)
 
     proc.stdout.on("data", (d: Buffer) => (stdout += d.toString()))
     proc.stderr.on("data", (d: Buffer) => (stderr += d.toString()))
 
     proc.on("close", (code) => {
-      // code is null if process was killed by timeout — treat as success if we got output
-      const exitCode = code ?? (stdout.length > 0 ? 0 : 1)
+      clearTimeout(timer)
+      const exitCode = killed ? 1 : (code ?? (stdout.length > 0 ? 0 : 1))
       resolve({ stdout: stdout.trim(), stderr: stderr.trim(), exitCode })
     })
 
     proc.on("error", (err) => {
+      clearTimeout(timer)
       reject(new Error(`jules CLI error: ${err.message}`))
     })
   })

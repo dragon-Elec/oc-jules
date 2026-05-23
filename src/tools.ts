@@ -87,7 +87,6 @@ async function resolveSource(
 // ─── tool registry ───────────────────────────────────────────────
 
 export async function buildTools(jules: JulesClient | null, config: JulesConfig) {
-  const cliAvailable = await detectCLI()
 
   // Only register API tools if client is available
   const apiTools = jules ? {
@@ -333,9 +332,9 @@ export async function buildTools(jules: JulesClient | null, config: JulesConfig)
 
   }
 
-  // ── CLI-powered tools (only available if `jules` binary is installed) ──
+  // ── CLI-powered tools — lazy detection on first use, skippable via config ──
 
-  const cliTools = cliAvailable ? {
+  const cliTools = config.cliEnabled !== false ? {
 
       jules_pull_diff: tool({
         description:
@@ -344,6 +343,7 @@ export async function buildTools(jules: JulesClient | null, config: JulesConfig)
           sessionId: tool.schema.string().describe("Completed session ID"),
         },
         async execute(args) {
+          if (!await detectCLI()) return "Jules CLI not found. Install with: npm i -g @google/jules"
           const res = await execJules(["remote", "pull", "--session", args.sessionId], { timeout: 30_000 })
           if (res.exitCode !== 0) {
             return `Failed to pull diff: ${res.stderr || res.stdout}`
@@ -360,6 +360,7 @@ export async function buildTools(jules: JulesClient | null, config: JulesConfig)
           sessionId: tool.schema.string().describe("Completed session ID"),
         },
         async execute(args) {
+          if (!await detectCLI()) return "Jules CLI not found. Install with: npm i -g @google/jules"
           const res = await execJules(["remote", "pull", "--session", args.sessionId, "--apply"], { timeout: 30_000 })
           if (res.exitCode !== 0) {
             return `Failed to apply changes: ${res.stderr || res.stdout}`
@@ -377,6 +378,7 @@ export async function buildTools(jules: JulesClient | null, config: JulesConfig)
           repo: tool.schema.string().optional().describe("Repo in 'owner/repo' format. Auto-detected from git remote if omitted."),
         },
         async execute(args) {
+          if (!await detectCLI()) return "Jules CLI not found. Install with: npm i -g @google/jules"
           const count = Math.min(Math.max(args.count, 1), 5)
           const repo = args.repo ?? (await gatherGitContext())?.owner + "/" + (await gatherGitContext())?.repo
           if (!repo || repo.includes("undefined")) {
@@ -400,6 +402,7 @@ export async function buildTools(jules: JulesClient | null, config: JulesConfig)
           "List all sessions via CLI (alternative to API). Shows table with ID, description, repo, last active, status. Requires Jules CLI. Useful as fallback if API key is not configured.",
         args: {},
         async execute() {
+          if (!await detectCLI()) return "Jules CLI not found. Install with: npm i -g @google/jules"
           const res = await execJules(["remote", "list", "--session"], { timeout: 10_000 })
           if (res.exitCode !== 0) {
             return `CLI error: ${res.stderr || res.stdout}`
