@@ -290,11 +290,17 @@ export async function buildTools(jules: JulesClient | null, config: JulesConfig)
 
         // Build the agent instruction
         const browser = config.suggestions?.browser ?? "brave"
+        const browserPath = config.suggestions?.browserPath ?? "/usr/bin/brave-browser"
         const port = config.suggestions?.port ?? 9222
         const profile = config.suggestions?.useExistingProfile !== false ? "default" : "temp"
 
+        const processedPlaybook = playbook
+          .replace(/\{source\}/g, resolved.source)
+          .replace(/\{browserPath\}/g, browserPath)
+          .replace(/\{port\}/g, String(port))
+
         const instruction = [
-          `# Jules Suggestions Fetch Task`,
+          `# Jules Web UI Task`,
           ``,
           `## Config`,
           `- Source: ${resolved.source}`,
@@ -304,12 +310,11 @@ export async function buildTools(jules: JulesClient | null, config: JulesConfig)
           `- Playbook: ${pbPath}`,
           ``,
           `## Instructions`,
-          `1. Ensure browser is running: launch ${browser} with --remote-debugging-port=${port}`,
+          `1. Ensure browser is running: launch ${browser} on port ${port}`,
           `2. Connect agent-browser to port ${port}`,
-          `3. Read and follow the playbook at ${pbPath}`,
-          `4. Replace {source} with ${resolved.source} in the playbook's API call`,
-          `5. Execute the API extraction (primary) or DOM extraction (fallback)`,
-          `6. Return the structured JSON array of suggestions`,
+          `3. Read and follow the playbook precisely. All bash commands below are ready to execute.`,
+          `4. Execute the API extraction (primary) or DOM extraction (fallback)`,
+          `5. Return the structured JSON array of suggestions`,
           ``,
           `## If extraction fails`,
           `- Inspect the page with agent-browser snapshot`,
@@ -319,7 +324,7 @@ export async function buildTools(jules: JulesClient | null, config: JulesConfig)
           ``,
           `## Playbook Content`,
           ``,
-          playbook,
+          processedPlaybook,
         ].join("\n")
 
         return instruction
