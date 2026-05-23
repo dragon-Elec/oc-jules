@@ -4,9 +4,11 @@
 Interact with the Jules web UI to fetch suggestions, list recent/archived sessions, and archive sessions.
 
 ## Prerequisites
-- Browser running on CDP port {port}
+- Browser running on CDP port {port} (default: `9222`)
 - Logged into jules.google.com in that browser
 - Source repo must have suggestions enabled at jules.google.com
+
+**Defaults:** `{port}=9222`, `{browserPath}=/usr/bin/brave-browser` (or `google-chrome`). Override in the script calling this playbook.
 
 ## Step 1: Connect to Browser
 Check if browser is already running on the port:
@@ -29,7 +31,8 @@ agent-browser open "https://jules.google.com/repo/github/{source}/suggestions"
 Wait for page to load. If redirected to login page, report: "Browser not logged into jules.google.com. Please log in manually and retry."
 
 ## Step 3: Extract via API (Primary)
-Run this command to get structured JSON:
+Only use `agent-browser` CLI — do NOT try other browser automation tools. They won't connect.
+
 ```bash
 agent-browser eval "(async () => {
   const at = window.WIZ_global_data?.SNlM0e;
@@ -42,8 +45,9 @@ agent-browser eval "(async () => {
   });
 
   const text = await resp.text();
-  const clean = text.replace(/^\)\]\}'\n\n?/, '');
-  const outer = JSON.parse(clean);
+  // Use indexOf('[') not regex — regex gets mangled by shell escaping
+  const idx = text.indexOf('[');
+  const outer = JSON.parse(text.substring(idx));
   const suggestions = JSON.parse(outer[0][2])[0];
 
   return suggestions.map(s => {
@@ -95,12 +99,39 @@ agent-browser eval "(() => {
 })()"
 ```
 
-## Step 5: Expand a Suggestion (Optional)
-To get full details (description, location, rationale, code context):
+## Step 5: Expand a Suggestion & Extract Structured Fields
+To get full details (description, location, rationale, code context), expand all items then extract structured fields:
 ```bash
-agent-browser click ".suggestion-item:nth-child(N) .expand-button"
+agent-browser eval "(() => {
+  // Expand all collapsible suggestion items
+  document.querySelectorAll('.expand-button').forEach(b => b.click());
+  return 'Expanded ' + document.querySelectorAll('.expand-button').length + ' items';
+})()"
 ```
-Then re-run Step 3 or Step 4. Expanded sections appear as h4 headings: DESCRIPTION, LOCATION, RATIONALE, CODE CONTEXT.
+Then extract structured fields:
+```bash
+agent-browser eval "(() => {
+  const items = document.querySelectorAll('.suggestion-item');
+  return Array.from(items).map((item, i) => {
+    const title = item.querySelector('.suggestion-title')?.textContent?.trim();
+    const fields = {};
+    // Expanded details use h4 heading
+    item.querySelectorAll('h4').forEach(h4 => {
+      const label = h4.textContent.trim();
+      let next = h4.nextElementSibling;
+      let content = '';
+      while (next && next.tagName !== 'H4') {
+        content += next.textContent + ' ';
+        next = next.nextElementSibling;
+      }
+      fields[label] = content.trim();
+    });
+    return { index: i, title, ...fields };
+  });
+})()"
+```
+
+**Note: Code context in suggestions is based on a snapshot taken when the suggestion was generated. It may be stale if the file has changed since then. Always verify against actual file contents.**
 
 ## Step 6: Fetch Recent Sessions (Active & Archived)
 To fetch the user's recent sessions across all repos, use the `p1Takd` API.
@@ -121,8 +152,9 @@ agent-browser eval "(async () => {
   });
 
   const text = await resp.text();
-  const clean = text.replace(/^\)\]\}'\n\n?/, '');
-  const outer = JSON.parse(clean);
+  // Use indexOf('[') — regex gets mangled by shell escaping
+  const idx = text.indexOf('[');
+  const outer = JSON.parse(text.substring(idx));
   const data = JSON.parse(outer[0][2]);
   
   // data[0] contains the sessions array if there are any
@@ -204,7 +236,7 @@ agent-browser eval "(() => {
 ```
 
 ## Step 9: Dismiss a Suggestion (DOM)
-To dismiss a suggestion from the list:
+To dismiss a suggestion from the list. There's a confirmation dialog after clicking close:
 ```bash
 agent-browser eval "(() => {
   const items = Array.from(document.querySelectorAll('.suggestion-item'));
@@ -213,12 +245,14 @@ agent-browser eval "(() => {
   if (!item) return 'Suggestion not found';
   
   const closeBtn = item.querySelector('.action-button.close');
-  if (closeBtn) {
-    closeBtn.click();
-    return 'Clicked Dismiss';
-  }
-  return 'Dismiss button not found';
+  if (!closeBtn) return 'Close button not found';
+  closeBtn.click();
+  return 'Clicked close — now confirm dialog';
 })()"
+```
+Then confirm the dialog:
+```bash
+agent-browser click ".delete-button.primary"
 ```
 
 ## Field Map (API Response)
@@ -256,6 +290,8 @@ agent-browser eval "(() => {
 | YqkSHd | Source status |
 
 ## Maintenance
+- **CRITICAL:** Do NOT edit this playbook to perform one-off tasks (like replacing `SESSION_TITLE_HERE` or `SUGGESTION_TITLE_HERE`). This file is a template. You must copy the commands, replace the placeholders in your own execution context, and run them.
+- ONLY edit this playbook if the underlying UI, selectors, or API have permanently changed.
 - If API extraction fails, fall back to DOM extraction
 - If selectors change, inspect the page and update this playbook
 - If a new rpcid is needed, capture it with `agent-browser network requests`
