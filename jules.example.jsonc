@@ -1,0 +1,35 @@
+{
+  // Your Jules API key (get this from jules.google.com/settings)
+  "apiKey": "YOUR_API_KEY_HERE",
+
+  // Default source repository (e.g., "github/owner/repo")
+  // If omitted, the plugin will try to auto-detect it from the local git context.
+  "defaultSource": "",
+
+  // Default branch to base work on
+  "defaultBranch": "main",
+
+  // If true, sessions will pause at AWAITING_PLAN_APPROVAL state
+  "requirePlanApproval": false,
+
+  // Logging level: "debug", "info", "warn", "error"
+  "logLevel": "info",
+
+  // Configuration for Web UI features (Suggestions, Recent Sessions, Archive)
+  "suggestions": {
+    // Supported browsers: "brave", "chrome", "edge" (Must be Chromium-based for CDP)
+    "browser": "brave",
+    
+    // Absolute path to the browser executable
+    "browserPath": "/usr/bin/brave-browser",
+    
+    // CDP debugging port
+    "port": 9222,
+    
+    // Use your existing browser profile (keeps you logged into jules.google.com)
+    "useExistingProfile": true,
+    
+    // Path to the playbook instructions
+    "playbookPath": "~/.config/opencode/plugins/oc-jules/playbooks/web-ui.md"
+  }
+}

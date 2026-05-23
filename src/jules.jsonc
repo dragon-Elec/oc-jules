@@ -1,0 +1,19 @@
+{
+  // Jules API key
+  "apiKey": "YOUR_API_KEY_HERE",
+  
+  // Log level for debugging
+  "logLevel": "debug",
+  
+  // Default settings
+  "defaultBranch": "main",
+  "requirePlanApproval": false,
+
+  // Suggestions browser config
+  "suggestions": {
+    "browser": "brave",
+    "browserPath": "/usr/bin/brave-browser",
+    "port": 9222,
+    "useExistingProfile": true
+  }
+}
