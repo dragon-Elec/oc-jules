@@ -185,6 +185,42 @@ agent-browser eval "(() => {
 })()"
 ```
 
+## Step 8: Start a Suggestion (DOM)
+To start a session directly from a suggestion (uses daily limit):
+```bash
+agent-browser eval "(() => {
+  const items = Array.from(document.querySelectorAll('.suggestion-item'));
+  // Replace SUGGESTION_TITLE_HERE with the actual title
+  const item = items.find(el => el.textContent.includes('SUGGESTION_TITLE_HERE'));
+  if (!item) return 'Suggestion not found';
+  
+  const startBtn = item.querySelector('.start-button.secondary');
+  if (startBtn) {
+    startBtn.click();
+    return 'Clicked Start';
+  }
+  return 'Start button not found (might already be started)';
+})()"
+```
+
+## Step 9: Dismiss a Suggestion (DOM)
+To dismiss a suggestion from the list:
+```bash
+agent-browser eval "(() => {
+  const items = Array.from(document.querySelectorAll('.suggestion-item'));
+  // Replace SUGGESTION_TITLE_HERE with the actual title
+  const item = items.find(el => el.textContent.includes('SUGGESTION_TITLE_HERE'));
+  if (!item) return 'Suggestion not found';
+  
+  const closeBtn = item.querySelector('.action-button.close');
+  if (closeBtn) {
+    closeBtn.click();
+    return 'Clicked Dismiss';
+  }
+  return 'Dismiss button not found';
+})()"
+```
+
 ## Field Map (API Response)
 | Index | Field | Type |
 |---|---|---|
