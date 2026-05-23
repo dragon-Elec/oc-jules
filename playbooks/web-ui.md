@@ -289,6 +289,15 @@ agent-browser click ".delete-button.primary"
 | o30O0e | User profile |
 | YqkSHd | Source status |
 
+## How This Playbook Works
+This file is a **template** consumed by the `jules_web_ui_playbook` OpenCode tool. The tool:
+1. Reads this file from disk
+2. Replaces `{source}`, `{port}`, `{browserPath}` with values from `~/.config/opencode/jules.jsonc`
+3. Returns the processed text as instructions to the agent
+
+**You will never see raw `{port}` or `{browserPath}` — the tool replaces them before you read this.**
+If you see those placeholders in the playbook source, they are template variables, not literal strings.
+
 ## Maintenance
 - **CRITICAL:** Do NOT edit this playbook to perform one-off tasks (like replacing `SESSION_TITLE_HERE` or `SUGGESTION_TITLE_HERE`). This file is a template. You must copy the commands, replace the placeholders in your own execution context, and run them.
 - ONLY edit this playbook if the underlying UI, selectors, or API have permanently changed.
